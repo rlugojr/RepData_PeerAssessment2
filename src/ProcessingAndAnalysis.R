@@ -1,7 +1,13 @@
+#environment prep and report
+
 library(tidyverse)
 library(reshape2)
 library(data.table)
 library(stringi)
+
+sessionInfo()
+
+#source data file download
 
 file_url <- "http://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
 source_file <- paste0(getwd(),"/data/repdata_data_StormData.csv.bz2")
@@ -14,26 +20,34 @@ if (!file.exists(csvStormData)) {
     unzip(source_file)
 }
 
+# data File processing
 keepCols <- c("BGN_DATE","STATE","EVTYPE","FATALITIES","INJURIES","PROPDMG", "PROPDMGEXP", "CROPDMG", "CROPDMGEXP")
 
 stormData <- fread(file = csvStormData, sep = ",", header = T, select = keepCols, na.strings = "NA", verbose = T, autostart = T,
                    strip.white = T, data.table = T, quote = '\"', stringsAsFactors = F, showProgress = T)
 
+#char to date field conversion
 stormData$BGN_DATE <- as.Date(stormData$BGN_DATE,"%m/%d/%Y")
+#create YEAR field from BGN_DATE
 stormData$YEAR <- year(stormData$BGN_DATE)
 
+#cleanup pertinent EVTYPE variants using regexes before analysis for more accuracy
 stormData$EVTYPE <- stri_replace(stormData$EVTYPE, "THUNDERSTORM WINDS", regex = "(.)*?(A-Z)?T\\w+\\sWIN(D)?(S)?\\D?(.*)?")
 stormData$EVTYPE <- stri_replace(stormData$EVTYPE, "FLASH FLOODS", regex = "(.*)?FLOOD(.*)?")
 stormData$EVTYPE <- stri_replace(stormData$EVTYPE, "EXTREME HEAT", regex = "(.*)HEAT(.*)")
 stormData$EVTYPE <- stri_replace(stormData$EVTYPE, "TORNADO", regex = "(.*)TORNADO(.*)")
 
+#The majority of data reporting for all EVTYPES starts around 1993.
+#Using that as a selection filter on YEAR to keep tornados from becoming an outlier.
+#limiting records to ones that have FATALITIES or INJURIES
 population_health_1993 <- stormData %>%
-    filter(YEAR >= 1993 & (FATALITIES != 0 & INJURIES != 0)) %>%
+    filter(YEAR >= 1993 & (FATALITIES != 0 | INJURIES != 0)) %>%
     select(EVTYPE, FATALITIES, INJURIES) %>%
     group_by(EVTYPE) %>%
     summarize(FATALITIES = sum(FATALITIES), INJURIES = sum(INJURIES), CASUALTIES = sum(FATALITIES + INJURIES)) %>%
     arrange(desc(CASUALTIES))
 
+#
 top_5_events <- melt(population_health_1993[1:5,],id.vars = "EVTYPE")
 levels(top_5_events$EVTYPE) <- population_health_1993[1:5,]$EVTYPE
 
@@ -49,6 +63,7 @@ bar_population_health_Top_5 <- ggplot(top_5_events, aes(x = reorder(EVTYPE, valu
 bar_population_health_Top_5
 
 
+#Question 2
 
 
-sessionInfo()
+

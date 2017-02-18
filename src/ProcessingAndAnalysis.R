@@ -3,8 +3,8 @@ library(reshape2)
 library(data.table)
 library(stringi)
 
-url <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
-csvStormData <- paste0(getwd(),"../../repdata_data_StormData.csv")
+#data source file link:  "http://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
+csvStormData <- paste0(getwd(),"/data/repdata_data_StormData.csv")
 
 keepCols <- c("BGN_DATE","STATE","EVTYPE","FATALITIES","INJURIES","PROPDMG", "PROPDMGEXP", "CROPDMG", "CROPDMGEXP")
 

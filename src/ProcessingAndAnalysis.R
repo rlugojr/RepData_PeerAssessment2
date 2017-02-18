@@ -3,8 +3,16 @@ library(reshape2)
 library(data.table)
 library(stringi)
 
-#data source file link:  "http://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
+file_url <- "http://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
+source_file <- paste0(getwd(),"/data/repdata_data_StormData.csv.bz2")
 csvStormData <- paste0(getwd(),"/data/repdata_data_StormData.csv")
+
+if (!file.exists(csvStormData)) {
+    if (!file.exists(source_file)) {
+        download.file(file_url, source_file)
+    }
+    unzip(source_file)
+}
 
 keepCols <- c("BGN_DATE","STATE","EVTYPE","FATALITIES","INJURIES","PROPDMG", "PROPDMGEXP", "CROPDMG", "CROPDMGEXP")
 
@@ -39,3 +47,8 @@ bar_population_health_Top_5 <- ggplot(top_5_events, aes(x = reorder(EVTYPE, valu
     labs(main = "Top 5 Events with Highest Casualties 1993 - 2011", x = "Event Type", y = "Total Casualties (Log Sqrt)")
 
 bar_population_health_Top_5
+
+
+
+
+sessionInfo()

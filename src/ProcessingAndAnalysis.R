@@ -11,16 +11,18 @@ sessionInfo()
 
 data_dir <- paste0(getwd(),"/data")
 file_url <- "http://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
-source_file <- paste0(getwd(),"/data/repdata_data_StormData.csv.bz2")
-csvStormData <- paste0(getwd(),"/data/repdata_data_StormData.csv")
+source_file <- paste(data_dir,"repdata_data_StormData.csv.bz2", sep = "/")
+csvStormData <- paste(data_dir,"repdata_data_StormData.csv", sep = "/")
 
 if (!file.exists(csvStormData)) {
     if (!file.exists(source_file)) {
-        if(!dir.exists(data_dir)) {dir.create(data_dir)}
+        if (!dir.exists(data_dir)) {
+            dir.create(data_dir)
+        }
         download.file(file_url, source_file)
     }
-   #unzip(source_file)
-    system(paste0("\"c:/Program Files/WinRAR/WinRAR.exe \" ", "x ", getwd(), "/data/repdata_data_StormData.csv.bz2 ."), intern = T)
+    unzip(source_file, "repdata_data_StormData.csv", list = F, junkpaths = F,exdir = "./data", unzip = "internal")
+    #system(paste0("\"c:/Program Files/WinRAR/WinRAR.exe \" ", "x ", getwd(), "/data/repdata_data_StormData.csv.bz2 ."), intern = T)
 }
 
 # data File processing

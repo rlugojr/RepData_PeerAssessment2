@@ -9,15 +9,18 @@ sessionInfo()
 
 #source data file download
 
+data_dir <- paste0(getwd(),"/data")
 file_url <- "http://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
 source_file <- paste0(getwd(),"/data/repdata_data_StormData.csv.bz2")
 csvStormData <- paste0(getwd(),"/data/repdata_data_StormData.csv")
 
 if (!file.exists(csvStormData)) {
     if (!file.exists(source_file)) {
+        if(!dir.exists(data_dir)) {dir.create(data_dir)}
         download.file(file_url, source_file)
     }
-    unzip(source_file)
+   #unzip(source_file)
+    system(paste0("\"c:/Program Files/WinRAR/WinRAR.exe \" ", "x ", getwd(), "/data/repdata_data_StormData.csv.bz2 ."), intern = T)
 }
 
 # data File processing
@@ -112,6 +115,20 @@ bar_Cost_Top_5 <- ggplot(top_5_cost_events, aes(x = reorder(EVTYPE, value), y = 
     ggsave("figures/top_5_cost_events.png")
 
 bar_Cost_Top_5
+
+#forecast
+#find any records that are the top cause of casaulty and damage
+top_events <- c("TORNADO","FLASH FLOOD","HURRICANE","EXTREME HEAT")
+topEventData <- stormData %>%
+    filter(YEAR >= 1993 & (EVTYPE %in% top_events)) %>%
+    select(YEAR, EVTYPE) %>%
+    group_by(YEAR,EVTYPE) %>%
+    summarize(event_count = n()) %>%
+    arrange(YEAR)
+
+ggplot(topEventData, aes(x = YEAR, y= event_count, fill= EVTYPE)) +
+    geom_line(aes(color = EVTYPE)) +
+    stat_smooth(method = "lim")
 
 
 options(scipen = 0)

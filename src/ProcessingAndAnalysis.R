@@ -4,11 +4,13 @@ library(tidyverse)
 library(reshape2)
 library(data.table)
 library(stringi)
+library(gridExtra)
+
+options(scipen = 999)
 
 sessionInfo()
 
 #source data file download
-
 data_dir <- paste0(getwd(),"/data")
 file_url <- "http://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
 source_file <- paste(data_dir,"repdata_data_StormData.csv.bz2", sep = "/")
@@ -22,7 +24,6 @@ if (!file.exists(csvStormData)) {
         download.file(file_url, source_file)
     }
     unzip(source_file, "repdata_data_StormData.csv", list = F, junkpaths = F,exdir = "./data", unzip = "internal")
-    #system(paste0("\"c:/Program Files/WinRAR/WinRAR.exe \" ", "x ", getwd(), "/data/repdata_data_StormData.csv.bz2 ."), intern = T)
 }
 
 # data File processing
@@ -74,7 +75,7 @@ bar_population_health_Top_5
 
 
 #Question 2
-options(scipen = 999)
+
 #create tables to hold damage code and corresponding magnitude for PROP and CROP.
 propDamageCalc <- data.frame(
     PROPDMGEXP = c("K", "M", "B"),
@@ -120,17 +121,49 @@ bar_Cost_Top_5
 
 #forecast
 #find any records that are the top cause of casaulty and damage
-top_events <- c("TORNADO","FLASH FLOOD","HURRICANE","EXTREME HEAT")
-topEventData <- stormData %>%
+top_events <- unique(top_5_pop_events[1:5,]$EVTYPE, top_5_cost_events[1:5,]$EVTYPE)
+topEventsCountData <- stormData %>%
     filter(YEAR >= 1993 & (EVTYPE %in% top_events)) %>%
     select(YEAR, EVTYPE) %>%
     group_by(YEAR,EVTYPE) %>%
-    summarize(event_count = n()) %>%
-    arrange(YEAR)
+    summarize(event_count = mean(n()))
 
-ggplot(topEventData, aes(x = YEAR, y= event_count, fill= EVTYPE)) +
-    geom_line(aes(color = EVTYPE)) +
-    stat_smooth(method = "lim")
+topEventsCountData$EVTYPE <- factor(topEventsCountData$EVTYPE)
+
+#plot number of each event per year
+plot_num_events_per_year <- ggplot(topEventsCountData, aes(x = YEAR, y = event_count, fill = EVTYPE, color = EVTYPE)) +
+    geom_line(lwd = 1) +
+    geom_smooth(method = "lm", se = F, linetype = 2)
+
+
+topEventsMeanEffectsData <- stormData %>%
+    filter(YEAR >= 1993 & (EVTYPE %in% top_events)) %>%
+    select(YEAR, EVTYPE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP)
+
+topEventsMeanEffectsData <- inner_join(topEventsMeanEffectsData, propDamageCalc, by = "PROPDMGEXP")
+topEventsMeanEffectsData <- inner_join(topEventsMeanEffectsData, cropDamageCalc, by = "CROPDMGEXP")
+    mutate(topEventsMeanEffectsData, PROPDMGCOST = PROPDMG * PROPDMGMULT, CROPDMGCOST = CROPDMG * CROPDMGMULT)
+
+topEventsMeanEffectsData <- topEventsMeanEffectsData %>%
+    group_by(YEAR,EVTYPE) %>%
+    summarize(FATALITIES = sum(FATALITIES), INJURIES = sum(INJURIES), CASUALTIES = sum(FATALITIES + INJURIES), PROPDMG = sum(PROPDMG), CROPDMG = sum(CROPDMG), COST = sum(PROPDMG + CROPDMG)) %>%
+    arrange(YEAR, EVTYPE)
+
+plot_effects_scatter <- ggplot(topEventsMeanEffectsData, aes(x = CASUALTIES, y = COST, fill = EVTYPE)) +
+    geom_point(aes(color = EVTYPE, shape = EVTYPE)) +
+    scale_x_log10()
+
+topEventsReport <- topEventsMeanEffectsData %>%
+    group_by(EVTYPE) %>%
+    summarize(FATALITIES = mean(FATALITIES), INJURIES = mean(INJURIES), CASUALTIES = mean(FATALITIES + INJURIES), PROPDMG = mean(PROPDMG), CROPDMG = mean(CROPDMG), COST = sum(PROPDMG + CROPDMG)) %>%
+    select(EVTYPE, CASUALTIES,COST) %>%
+    arrange(desc(CASUALTIES),desc(COST))
+
+grid.arrange(plot_num_events_per_year,plot_effects_scatter, nrow  = 2)
+
+topEventsReport[1,]
+
+topEventsReport[2,]
 
 
 options(scipen = 0)

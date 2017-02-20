@@ -1,112 +1,40 @@
-# Reproducible Research Peer Assessment 2
+# An Analysis of Severe Weather and Climate Events between 1950-2011 and the Identification of those which Incurred the Most Human and Economic Losses.
 Ray Lugo, Jr.  
 February 17, 2017  
 
 
 
-###Synopsis
-The NOAA Storm database contains observations of weather events across the United States.  The subset used in this report include observations, at the individual State level, from 1950 - 2011.  The purpose of this analysis is to determine the weather events which cause the highest number of casualties (injury and death) to the human population as well as the most damage caused to property and crops in terms of estimated cost to repair or replace.  During analysis, we have determined that the data required normalization, as there was substantial variance in the categorization of the Events themselves which would lead to error.
-As a result of the analysis, we have learned that the highest human toll comes from Tornados and Flash Floods and the most property damage comes from Flash Floods and Thunderstorms. On average, Tornados cause 685.47 casualties, Thunderstorms cause \$68,992.79K in damage and Flash Floods cause 412.84 casualties and $84,480K in property and crop damage. 
 
-###Environment Prep and Session Report
+
+##Synopsis
+The  [U.S. National Oceanic and Atmospheric Administration](https://www.ncdc.noaa.gov/climate-information/extreme-events) (NOAA) Storm database contains observations of weather events across the United States.  The dataset used in this report includes observations of weather events from 1950 - 2011.  The purpose of this analysis is to determine the weather events which cause the highest number of casualties (injury and death) to the human population as well as the most damage caused to property and crops in terms of estimated cost of the loss, repair or replacement.
+
+During exploratory analysis, we have determined that the data required further processing to acheive normalization, as there was substantial variance found in the categorization of the Events themselves which could lead to inaccuracy. Steps were taken to eliminate the variance where necessary and mitigate risk. 
+
+As a result of the analysis, we have learned that the highest human toll is attributed to **Tornados** and **Flash Floods** and the most property damage is caused by **Flash Floods** and **Thunderstorms**.  Although Tornados were highest on the list for causing  casualties, *Flash Floods were present in both sets of lists and are a simultaneous threat to both life and property on a large scale*.  On average for each occurance, Tornados cause 685.47 casualties and \$38,023K in damage and Flash Floods cause 412.84 casualties and $84,480K in property and crop damage.  Tornados have a steady number of occurrences since 1993 but Flash Floods have seen a steady increase in the time frame measured.  Both events are dangerous and costly, therefore both should be monitored closely.
+
+## Source Data File
+
+The [NOAA source data file]("http://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2") used for this analysis contains 95,657 observations that range from 1950 - 2011, saved in a comma separated value file.  Each observation contains details on the weather event, fatalities, injuries, property and crop damage (where applicable), and further information on where the event leading to this damage transpired.  It contains a "comments" type field which contains unstructured text and which accounts for a large portion of the data files decompressed size of over 500MB.
+
+##Environment Prep and Session Report
+The R packages used for this analysis include *Tidyverse (dplyr, ggplot2, etc.), reshape2, data.table, stringi and gridExtra*.    Please refer to the included session information which provides details on the versions of each package.  For this session, the  scientific notation option has been disabled in order to display monetary values.
 
 
 ```r
 library(tidyverse)
-```
-
-```
-## Loading tidyverse: ggplot2
-## Loading tidyverse: tibble
-## Loading tidyverse: tidyr
-## Loading tidyverse: readr
-## Loading tidyverse: purrr
-## Loading tidyverse: dplyr
-```
-
-```
-## Conflicts with tidy packages ----------------------------------------------
-```
-
-```
-## filter(): dplyr, stats
-## lag():    dplyr, stats
-```
-
-```r
 library(reshape2)
-```
-
-```
-## 
-## Attaching package: 'reshape2'
-```
-
-```
-## The following object is masked from 'package:tidyr':
-## 
-##     smiths
-```
-
-```r
 library(data.table)
-```
-
-```
-## -------------------------------------------------------------------------
-```
-
-```
-## data.table + dplyr code now lives in dtplyr.
-## Please library(dtplyr)!
-```
-
-```
-## -------------------------------------------------------------------------
-```
-
-```
-## 
-## Attaching package: 'data.table'
-```
-
-```
-## The following objects are masked from 'package:reshape2':
-## 
-##     dcast, melt
-```
-
-```
-## The following objects are masked from 'package:dplyr':
-## 
-##     between, first, last
-```
-
-```
-## The following object is masked from 'package:purrr':
-## 
-##     transpose
-```
-
-```r
 library(stringi)
 library(gridExtra)
+library(knitr)
+library(xtable)
+
+options(scipen = 999)
 ```
 
-```
-## 
-## Attaching package: 'gridExtra'
-```
-
-```
-## The following object is masked from 'package:dplyr':
-## 
-##     combine
-```
 
 ```r
-options(scipen = 999)
-
 sessionInfo()
 ```
 
@@ -126,25 +54,31 @@ sessionInfo()
 ## [1] stats     graphics  grDevices utils     datasets  methods   base     
 ## 
 ## other attached packages:
-##  [1] gridExtra_2.2.1   stringi_1.1.2     data.table_1.10.4
-##  [4] reshape2_1.4.2    dplyr_0.5.0       purrr_0.2.2      
-##  [7] readr_1.0.0       tidyr_0.6.1       tibble_1.2       
-## [10] ggplot2_2.2.1     tidyverse_1.1.1  
+##  [1] xtable_1.8-2      knitr_1.15.9      gridExtra_2.2.1  
+##  [4] stringi_1.1.2     data.table_1.10.4 reshape2_1.4.2   
+##  [7] dplyr_0.5.0       purrr_0.2.2       readr_1.0.0      
+## [10] tidyr_0.6.1       tibble_1.2        ggplot2_2.2.1    
+## [13] tidyverse_1.1.1  
 ## 
 ## loaded via a namespace (and not attached):
 ##  [1] Rcpp_0.12.9      plyr_1.8.4       forcats_0.2.0    tools_3.3.2     
 ##  [5] digest_0.6.12    jsonlite_1.2     lubridate_1.6.0  evaluate_0.10   
 ##  [9] nlme_3.1-131     gtable_0.2.0     lattice_0.20-34  psych_1.6.12    
 ## [13] DBI_0.5-1        yaml_2.1.14      parallel_3.3.2   haven_1.0.0     
-## [17] xml2_1.1.1       stringr_1.1.0    httr_1.2.1       knitr_1.15.9    
-## [21] hms_0.3          rprojroot_1.2    grid_3.3.2       R6_2.2.0        
-## [25] readxl_0.1.1     foreign_0.8-67   rmarkdown_1.3    modelr_0.1.0    
-## [29] magrittr_1.5     backports_1.0.5  scales_0.4.1     htmltools_0.3.5 
-## [33] rvest_0.3.2      assertthat_0.1   mnormt_1.5-5     colorspace_1.3-2
-## [37] lazyeval_0.2.0   munsell_0.4.3    broom_0.4.1
+## [17] xml2_1.1.1       stringr_1.1.0    httr_1.2.1       hms_0.3         
+## [21] rprojroot_1.2    grid_3.3.2       R6_2.2.0         readxl_0.1.1    
+## [25] foreign_0.8-67   rmarkdown_1.3    modelr_0.1.0     magrittr_1.5    
+## [29] backports_1.0.5  scales_0.4.1     htmltools_0.3.5  rvest_0.3.2     
+## [33] assertthat_0.1   mnormt_1.5-5     colorspace_1.3-2 lazyeval_0.2.0  
+## [37] munsell_0.4.3    broom_0.4.1
 ```
 
-### data file download
+## Data Loading
+Due to the number of records and the size of the data file, "fread" was chosen for its data ingestion speed which minimizes the time needed to populate the data table.  Initial data loading finishes in under 40 secs with subsequent loads completing in under 3 secs on average.
+
+Using "fread", we optimised speed and use of space by specifying the data fields to be imported from the CSV file prior to starting the process and this prevented the need to import extaneous fields such as the comments which are not required for this analysis.  The BGN_DATE field contains a date stored in the format "YYYYMMDD".  For the purpose of this analysis we converted that data into an actual "Date" field and also created a new field which holds only the "YEAR" part of each BGN_DATE.
+
+
 
 ```r
 data_dir <- paste0(getwd(),"/data")
@@ -198,19 +132,19 @@ stormData <- fread(file = csvStormData, sep = ",", header = T, select = keepCols
 ## Type codes: 5455555455555555555555333434555555555 (after applying drop or select (if supplied)
 ## Allocating 8 column slots (37 - 29 dropped)
 ## 
-Read 84.8% of 967216 rows
+Read 83.7% of 967216 rows
 Read 902297 rows and 8 (of 37) columns from 0.523 GB file in 00:00:03
 ## Read fewer rows (902297) than were allocated (967216).
 ##    0.000s (  0%) Memory map (rerun may be quicker)
-##    0.001s (  0%) sep and header detection
-##    0.617s ( 29%) Count rows (wc -l)
-##    0.004s (  0%) Column type detection (100 rows at 10 points)
-##    0.258s ( 12%) Allocation of 902297x37 result (xMB) in RAM
-##    1.268s ( 59%) Reading data
+##    0.000s (  0%) sep and header detection
+##    0.608s ( 28%) Count rows (wc -l)
+##    0.003s (  0%) Column type detection (100 rows at 10 points)
+##    0.261s ( 12%) Allocation of 902297x37 result (xMB) in RAM
+##    1.307s ( 60%) Reading data
 ##    0.000s (  0%) Allocation for type bumps (if any), including gc time if triggered
 ##    0.000s (  0%) Coercing data already read in type bumps (if any)
-##    0.003s (  0%) Changing na.strings to NA
-##    2.151s        Total
+##    0.002s (  0%) Changing na.strings to NA
+##    2.181s        Total
 ```
 
 ```r
@@ -218,7 +152,14 @@ Read 902297 rows and 8 (of 37) columns from 0.523 GB file in 00:00:03
 stormData$BGN_DATE <- as.Date(stormData$BGN_DATE,"%m/%d/%Y")
 #create YEAR field from BGN_DATE
 stormData$YEAR <- year(stormData$BGN_DATE)
+```
 
+The EVTYPE (Event Type) field contains "Event"" categories but it seems that the reporting was inconsistent and created variance in the catagory values themselves.  The values for the most significant event types were normalized in order to ensure that the results of each calculations is based on complete and accurate subsets of data.  This required several iterations until the "target" events were identified and the event values were corrected.
+
+During the exploratory analysis phase, a time series plot of the events with the highest number of casualties revealed that only two events were being reported initially and that the constant number of events recorded began around 1993.  All plots and results are then based off of the subset of data from 1993 - 2011, in order to minimize outliers and to provide a comparison where all events have an equal number of years worth of observations for 1:1 comparisons.
+
+
+```r
 #cleanup pertinent EVTYPE variants using regexes before analysis for more accuracy
 stormData$EVTYPE <- stri_replace(stormData$EVTYPE, "THUNDERSTORM", regex = "(.)*?(A-Z)?T\\w+\\sWIN(D)?(S)?\\D?(.*)?")
 stormData$EVTYPE <- stri_replace(stormData$EVTYPE, "THUNDERSTORM", regex = "(.*)THUNDERSTORM(.*)")
@@ -230,6 +171,11 @@ stormData$EVTYPE <- stri_replace(stormData$EVTYPE, "HURRICANE", regex = "(.*)HUR
 stormData$EVTYPE <- stri_replace(stormData$EVTYPE, "TROPICAL STORM", regex = "(.*)TROPICAL STORM(.*)")
 ```
 
+##Results
+
+####Across the United States, which types of events (as indicated in the EVTYPE variable) are most harmful with respect to population health?
+
+From 1993-2011, Tornados were responsible for 25K casualties, followed by Extreme Heat with 12.3K and Flash Flooding with 10.1K.
 
 
 ```r
@@ -243,9 +189,6 @@ population_health_1993 <- stormData %>%
     summarize(FATALITIES = sum(FATALITIES), INJURIES = sum(INJURIES), CASUALTIES = sum(FATALITIES + INJURIES)) %>%
     arrange(desc(CASUALTIES))
 ```
-##Results in which your results are presented.
-
-###Across the United States, which types of events (as indicated in the EVTYPE variable) are most harmful with respect to population health?
 
 
 ```r
@@ -257,16 +200,18 @@ bar_population_health_Top_5 <- ggplot(top_5_pop_events, aes(x = reorder(EVTYPE, 
     geom_text(size = 3, color = "white", position = position_stack(vjust = 0.5)) +
     scale_y_sqrt() +
     facet_grid(.~variable) +
-    scale_fill_manual(values = c("firebrick","steelblue","black"), labels = c("Fatalities", "Injuries", "Casualties")) +
+    scale_fill_manual(values = c("firebrick","steelblue","black"), labels = c("Fatalities", "Injuries", "TOTAL CASUALTIES")) +
     theme(axis.text.x = element_text(angle = 45, size = 6, hjust = 1)) +
     labs(main = "Top 5 Events with Highest Casualties 1993 - 2011", x = "Event", y = "Total Casualties in Thousands (Log sqrt)")
 
 bar_population_health_Top_5
 ```
 
-![](PA2_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
+![](PA2_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
 
-###Across the United States, which types of events have the greatest economic consequences?
+####Across the United States, which types of events have the greatest economic consequences?
+
+Flash Floods caused an estimated \$157.6B in damage to property and crops, followed by Hurricanes with S44.3B and Tornados with $16.5B.
 
 
 ```r
@@ -308,17 +253,19 @@ bar_Cost_Top_5 <- ggplot(top_5_cost_events, aes(x = reorder(EVTYPE, value), y = 
     geom_text(size = 3, color = "white", position = position_stack(vjust = 0.5)) +
     scale_y_sqrt() +
     facet_grid(.~variable) +
-    scale_fill_manual(values = c("darkgreen","brown","black"), labels = c("Property", "Crop", "Total")) +
+    scale_fill_manual(values = c("darkgreen","brown","black"), labels = c("Property", "Crop", "Total COST")) +
     theme(axis.text.x = element_text(angle = 45, size = 6, hjust = 1)) +
     labs(title = "Top 5 Events with Highest Costs 1993 - 2011", x = "Event", y = "Cost in Billions (Log sqrt)")
 
 bar_Cost_Top_5
 ```
 
-![](PA2_files/figure-html/unnamed-chunk-5-1.png)<!-- -->
+![](PA2_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
 
 
 ##Future Events Trend and Estimated Damage
+
+Thunderstorms have seen a large increase between 1993 and 2011 however their cost per incident is not as high as those attributed to Flash Floods and Tornados.  Tornados occurances have been steady but the trends show that Flash Flooding occurances have been increasing and this poses a great risk as each occurance brings a high human and economic cost.
 
 
 
@@ -337,7 +284,8 @@ topEventsCountData$EVTYPE <- factor(topEventsCountData$EVTYPE)
 #plot number of each event per year
 plot_num_events_per_year <- ggplot(topEventsCountData, aes(x = YEAR, y = event_count, fill = EVTYPE, color = EVTYPE)) +
     geom_line(lwd = 1) +
-    geom_smooth(method = "lm", se = F, linetype = 2)
+    geom_smooth(method = "lm", se = F, linetype = 2) +
+    labs(y = "Occurences")
 
 
 topEventsMeanEffectsData <- stormData %>%
@@ -357,46 +305,14 @@ topEventsMeanEffectsData <- topEventsMeanEffectsData %>%
 plot_effects_scatter <- ggplot(topEventsMeanEffectsData, aes(x = CASUALTIES, y = COST, fill = EVTYPE)) +
     geom_point(aes(color = EVTYPE, shape = EVTYPE)) +
     scale_x_log10()
+```
 
+
+```r
 grid.arrange(plot_num_events_per_year,plot_effects_scatter, nrow  = 2)
 ```
 
-```
-## Warning: Transformation introduced infinite values in continuous x-axis
-```
-
-![](PA2_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
-
-```r
-topEventsReport <- topEventsMeanEffectsData %>%
-    group_by(EVTYPE) %>%
-    summarize(FATALITIES = mean(FATALITIES), INJURIES = mean(INJURIES), CASUALTIES = mean(FATALITIES + INJURIES), PROPDMG = mean(PROPDMG), CROPDMG = mean(CROPDMG), COST = sum(PROPDMG + CROPDMG)) %>%
-    select(EVTYPE, CASUALTIES,COST) %>%
-    arrange(desc(CASUALTIES),desc(COST))
-
-
-topEventsReport[1,]
-```
-
-```
-## # A tibble: 1 × 3
-##    EVTYPE CASUALTIES     COST
-##     <chr>      <dbl>    <dbl>
-## 1 TORNADO   685.4737 38023.12
-```
-
-```r
-topEventsReport[2,]
-```
-
-```
-## # A tibble: 1 × 3
-##         EVTYPE CASUALTIES     COST
-##          <chr>      <dbl>    <dbl>
-## 1 FLASH FLOODS   412.8421 84480.48
-```
-
-
+![](PA2_files/figure-html/unnamed-chunk-10-1.png)<!-- -->
 
 
 ```r

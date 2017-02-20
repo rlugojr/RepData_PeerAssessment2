@@ -49,3 +49,10 @@ Temporary Items
 .Rhistory
 data/repdata_data_StormData.csv
 data/repdata_data_StormData.csv.bz2
+*.RData
+PA2_cache/html/unnamed-chunk-2_be5d95d96f5b563af2de8aaf8ce5fcf3.rdb
+*.rdx
+PA2_cache/html/__packages
+PA2_files/figure-html/unnamed-chunk-4-1.png
+PA2_files/figure-html/unnamed-chunk-6-1.png
+PA2_files/figure-html/unnamed-chunk-5-1.png

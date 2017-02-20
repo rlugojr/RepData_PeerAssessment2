@@ -2,7 +2,13 @@
 title: "Reproducible Research Peer Assessment 2"
 author: "Ray Lugo, Jr."
 date: "February 17, 2017"
-output: html_document
+output: 
+  html_document:
+    css: custom.css
+    df_print: default
+    fig_height: 5
+    fig_width: 7
+    keep_md: yes
 ---
 
 ```{r setup, include=FALSE}
@@ -184,9 +190,13 @@ topEventsMeanEffectsData <- topEventsMeanEffectsData %>%
     summarize(FATALITIES = sum(FATALITIES), INJURIES = sum(INJURIES), CASUALTIES = sum(FATALITIES + INJURIES), PROPDMG = sum(PROPDMG), CROPDMG = sum(CROPDMG), COST = sum(PROPDMG + CROPDMG)) %>%
     arrange(YEAR, EVTYPE)
 
+
 plot_effects_scatter <- ggplot(topEventsMeanEffectsData, aes(x = CASUALTIES, y = COST, fill = EVTYPE)) +
     geom_point(aes(color = EVTYPE, shape = EVTYPE)) +
     scale_x_log10()
+
+grid.arrange(plot_num_events_per_year,plot_effects_scatter, nrow  = 2)
+
 
 topEventsReport <- topEventsMeanEffectsData %>%
     group_by(EVTYPE) %>%
@@ -194,7 +204,6 @@ topEventsReport <- topEventsMeanEffectsData %>%
     select(EVTYPE, CASUALTIES,COST) %>%
     arrange(desc(CASUALTIES),desc(COST))
 
-grid.arrange(plot_num_events_per_year,plot_effects_scatter, nrow  = 2)
 
 topEventsReport[1,]
 
